@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarot Readings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #272a3d;
+            --accent: #6f709c;
+            --cream: #eddeb5;
+            --glass-bg: rgba(111, 112, 156, 0.12);
+            --glass-border: rgba(237, 222, 181, 0.18);
+            --glass-hover: rgba(111, 112, 156, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--cream);
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            cursor: default;
+        }
+
+        /* ── Noise overlay ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.5;
+        }
+
+        /* ── Starfield ── */
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            background: var(--cream);
+            border-radius: 50%;
+            animation: twinkle var(--d, 3s) ease-in-out infinite var(--delay, 0s);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.3); }
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 3rem;
+            background: rgba(39, 42, 61, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .nav-logo {
+            font-family: 'Fraunces', serif;
+            font-size: 1.4rem;
+            letter-spacing: 0.12em;
+            color: var(--cream);
+            font-style: italic;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.78rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 1px;
+            background: var(--cream);
+            transition: width 0.3s;
+        }
+        .nav-links a:hover { color: var(--cream); }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            padding: 8rem 3rem 4rem;
+            gap: 3rem;
+            z-index: 1;
+        }
+
+        .hero-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .hero-title {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(3.5rem, 7vw, 6rem);
+            line-height: 1.0;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--cream);
+        }
+        .hero-title em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .hero-sub {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            color: rgba(237, 222, 181, 0.65);
+            line-height: 1.7;
+            max-width: 380px;
+            font-style: italic;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        /* ── Glass Button ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--cream);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(237,222,181,0.15), rgba(111,112,156,0.1));
+            opacity: 0;
+            transition: opacity 0.35s;
+        }
+        .btn:hover {
+            border-color: rgba(237,222,181,0.45);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(237,222,181,0.15);
+            transform: translateY(-2px);
+        }
+        .btn:hover::before { opacity: 1; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(111,112,156,0.35), rgba(111,112,156,0.15));
+            border-color: rgba(111,112,156,0.5);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, rgba(111,112,156,0.55), rgba(111,112,156,0.3));
+        }
+
+        /* ── Hero Right: Floating Cards ── */
+        .hero-right {
+            position: relative;
+            height: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-card {
+            position: absolute;
+            width: 140px;
+            height: 230px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            background: linear-gradient(160deg, rgba(111,112,156,0.3), rgba(39,42,61,0.8));
+            display: flex;
+            flex-direction: column; /* Змінено для картинки */
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fraunces', serif;
+            color: var(--cream);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-align: center;
+            padding: 0.5rem;
+            animation: float var(--fd, 6s) ease-in-out infinite var(--fdelay, 0s);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .floating-card img {
+            width: 85%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .floating-card:hover {
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 30px rgba(111,112,156,0.3);
+            transform: scale(1.05) rotate(0deg) !important;
+            z-index: 10;
+        }
+        .floating-card .card-name {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.8;
+            line-height: 1.2;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(var(--rot, 0deg)); }
+            50% { transform: translateY(-15px) rotate(var(--rot, 0deg)); }
+        }
+
+        /* ── Card of the Day Section ── */
+        .section {
+            position: relative;
+            z-index: 1;
+            padding: 5rem 3rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        .section-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .section-title {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            color: var(--cream);
+            font-style: italic;
+        }
+
+        /* ── Flip Card ── */
+        .cotd-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .flip-card-container {
+            perspective: 1000px;
+            width: 220px;
+            height: 360px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.75s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .flip-card-container:hover .flip-card-inner,
+        .flip-card-container.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-front, .flip-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .flip-front {
+            background: linear-gradient(160deg, rgba(111,112,156,0.25), rgba(39,42,61,0.9));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .flip-front-pattern {
+            font-size: 5rem;
+            opacity: 0.4;
+            user-select: none;
+        }
+        .flip-front-text {
+            font-family: 'Fraunces', serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .flip-front::before {
+            content: '';
+            position: absolute;
+            inset: 12px;
+            border: 1px solid rgba(237,222,181,0.12);
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .flip-back {
+            background: linear-gradient(160deg, rgba(39,42,61,0.95), rgba(26,28,44,0.98));
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* Центрування картинки */
+            padding: 1rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .flip-back img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* ── COTD Info Panel ── */
+        .cotd-info {
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .cotd-date {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+        .cotd-title {
+            font-family: 'Fraunces', serif;
+            font-size: 2.2rem;
+            font-style: italic;
+            color: var(--cream);
+            line-height: 1.2;
+        }
+        .cotd-body {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: rgba(237, 222, 181, 0.7);
+            line-height: 1.8;
+            font-style: italic;
+        }
+        .cotd-keywords {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .kw-tag {
+            font-size: 0.62rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--cream);
+            border: 1px solid var(--glass-border);
+            padding: 0.3rem 0.8rem;
+            border-radius: 999px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s;
+        }
+        .kw-tag:hover {
+            background: var(--glass-hover);
+            border-color: rgba(237,222,181,0.35);
+        }
+
+        /* ── Divider ── */
+        .ornament-divider {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 0 3rem;
+            margin: 1rem 0;
+        }
+        .ornament-divider::before,
+        .ornament-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent));
+        }
+        .ornament-divider::after {
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+        .ornament-divider span {
+            color: var(--accent);
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+
+        /* ── Services Cards ── */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .service-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem 1.8rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .service-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.45), 0 0 40px rgba(111,112,156,0.15);
+            border-color: rgba(237,222,181,0.3);
+            background: var(--glass-hover);
+        }
+        .service-card:hover::before { opacity: 1; }
+
+        .service-icon {
+            font-size: 2.2rem;
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+        .service-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.15rem;
+            font-style: italic;
+            color: var(--cream);
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+        .service-desc {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.92rem;
+            color: rgba(237,222,181,0.6);
+            line-height: 1.7;
+            font-style: italic;
+        }
+        .service-price {
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* ── Contact Section ── */
+        .contact-section {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .contact-glass {
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+        }
+        .contact-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(111,112,156,0.15);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            padding: 0.7rem 1.4rem;
+            font-size: 0.78rem;
+            color: var(--cream);
+            letter-spacing: 0.08em;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .contact-item:hover {
+            background: rgba(111,112,156,0.3);
+            border-color: rgba(237,222,181,0.35);
+            transform: translateY(-2px);
+        }
+        .contact-item span:first-child { font-size: 1.1rem; }
+
+        /* ── Footer ── */
+        footer {
+            position: relative;
+            z-index: 1;
+            padding: 2rem 3rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: rgba(237,222,181,0.35);
+            letter-spacing: 0.1em;
+        }
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        footer a:hover { color: var(--cream); }
+
+        /* ── Scroll Reveal ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero { grid-template-columns: 1fr; padding: 7rem 1.5rem 3rem; }
+            .hero-right { height: 300px; }
+            .floating-card { width: 100px; height: 165px; }
+            nav { padding: 1rem 1.5rem; }
+            .nav-links { gap: 1rem; }
+            .section { padding: 4rem 1.5rem; }
+            .ornament-divider { padding: 0 1.5rem; }
+            footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+            .cotd-wrapper { gap: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<nav>
+    <div class="nav-logo">✦ Arcana</div>
+    <ul class="nav-links">
+        <li><a href="#cotd">Card of the Day</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#contact">Contact</a></li>
+    </ul>
+</nav>
+
+<section class="hero">
+    <div class="hero-left">
+        <span class="hero-eyebrow">✦ Ancient wisdom · Modern guidance</span>
+        <h1 class="hero-title">
+            Tarot<br>
+            <em>Readings</em>
+        </h1>
+        <p class="hero-sub">
+            Discover the language of the universe — one card at a time. Intuitive readings for clarity, healing, and self-discovery.
+        </p>
+        <div class="hero-buttons">
+            <a href="#services" class="btn btn-primary">Book a Reading</a>
+            <a href="#cotd" class="btn">Card of the Day</a>
+        </div>
+    </div>
+    <div class="hero-right" id="floating-cards-container">
+    </div>
+</section>
+
+<div class="ornament-divider"><span>✦ ✦ ✦</span></div>
+
+<section class="section" id="cotd">
+    <div class="section-header reveal">
+        <span class="section-label">Daily Oracle</span>
+        <h2 class="section-title">Card of the Day</h2>
+    </div>
+    <div class="cotd-wrapper">
+        <div class="flip-card-container reveal" id="cotdCard" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner">
+                <div class="flip-front">
+                    <span class="flip-front-pattern">☽ ✦ ☾</span>
+                    <span class="flip-front-text">Hover to reveal</span>
+                </div>
+                <div class="flip-back" id="cotd-image-container">
+                </div>
+            </div>
+        </div>
+        <div class="cotd-info reveal">
+            <span class="cotd-date">✦ Today's guidance</span>
+            <h3 class="cotd-title" id="cotd-name-title">Loading...</h3>
+            <p class="cotd-body" id="cotd-desc-body">
+                Connecting to the cosmic energy...
+            </p>
+            <div class="cotd-keywords" id="cotd-keywords-container">
+            </div>
+            <a href="#contact" class="btn" style="width:fit-content;">Get a Full Reading</a>
+        </div>
+    </div>
+</section>
+
+<div class="ornament-divider"><span>⟡</span></div>
+
+<section class="section" id="services">
+    <div class="section-header reveal">
+        <span class="section-label">✦ What I offer</span>
+        <h2 class="section-title">Reading Sessions</h2>
+    </div>
+    <div class="services-grid">
+        <div class="service-card reveal" style="transition-delay:0.1s">
+            <span class="service-icon">🌙</span>
+            <h3 class="service-title">Single Card Pull</h3>
+            <p class="service-desc">A focused snapshot of your current energy. Perfect for daily guidance or a quick check-in with the universe.</p>
+            <p class="service-price">15 min · €15</p>
+        </div>
+        <div class="service-card reveal" style="transition-delay:0.2s">
+            <span class="service-icon">🔺</span>
+            <h3 class="service-title">Three-Card Spread</h3>
+            <p class="service-desc">Past · Present · Future. Gain clarity on a situation by exploring its roots and potential outcomes.</p>
+            <p class="service-price">30 min · €30</p>
+        </div>
+        <div class="service-card reveal" style="transition-delay:0.3s">
+            <span class="service-icon">✦</span>
+            <h3 class="service-title">Celtic Cross</h3>
+            <p class="service-desc">A comprehensive 10-card reading that maps your situation, challenges, underlying currents, and potential futures.</p>
+            <p class="service-price">60 min · €60</p>
+        </div>
+        <div class="service-card reveal" style="transition-delay:0.4s">
+            <span class="service-icon">☽</span>
+            <h3 class="service-title">New Moon Ritual</h3>
+            <p class="service-desc">Align your intentions with lunar cycles. A powerful monthly reset using tarot and guided journaling prompts.</p>
+            <p class="service-price">45 min · €45</p>
+        </div>
+    </div>
+</section>
+
+<div class="ornament-divider"><span>✦ ✦ ✦</span></div>
+
+<section class="section" id="contact">
+    <div class="section-header reveal">
+        <span class="section-label">✦ Reach out</span>
+        <h2 class="section-title">Book a Session</h2>
+    </div>
+    <div class="contact-section">
+        <div class="contact-glass reveal">
+            <p class="cotd-body" style="margin-bottom:0;">
+                Ready to explore what the cards have to say? Reach out through any of the channels below and we'll schedule your reading.
+            </p>
+            <div class="contact-row">
+                <a href="mailto:hello@arcana.com" class="contact-item">
+                    <span>✉</span><span>hello@arcana.com</span>
+                </a>
+                <a href="https://t.me/arcana_reads" class="contact-item">
+                    <span>✈</span><span>@arcana_reads</span>
+                </a>
+                <a href="https://instagram.com/arcana.tarot" class="contact-item">
+                    <span>◈</span><span>@arcana.tarot</span>
+                </a>
+            </div>
+        </div>
+        <a href="https://github.com/oleksandratupchiy/tarot-site-lab2" class="btn" target="_blank" rel="noopener" style="font-size:0.72rem; opacity:0.6;">
+            ⟡ View on GitHub
+        </a>
+    </div>
+</section>
+
+<footer>
+    <span>© 2026 Arcana · Tarot Readings</span>
+    <span>made with ✦ &amp; intuition</span>
+    <a href="https://github.com/oleksandratupchiy/tarot-site-lab2" target="_blank">GitHub →</a>
+</footer>
+
+<script>
+    // 1. Generate stars
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 120; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${2 + Math.random()*4}s;
+      --delay:${Math.random()*5}s;
+    `;
+        starsEl.appendChild(s);
+    }
+
+    // 2. Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                observer.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.12 });
+    reveals.forEach(r => observer.observe(r));
+
+    // 3. FETCH AND POPULATE DATA
+    async function initializeArcana() {
+        try {
+            const response = await fetch('/api/cards');
+            const allCards = await response.json();
+
+            if (!allCards || allCards.length === 0) return;
+
+            // --- POPULATE FLOATING CARDS (Hero) ---
+            const floatingContainer = document.getElementById('floating-cards-container');
+            const floatConfigs = [
+                { rot: '-12deg', fd: '7s', delay: '0s', left: '5%', top: '8%' },
+                { rot: '8deg', fd: '6s', delay: '1.2s', right: '5%', top: '5%' },
+                { rot: '-5deg', fd: '8s', delay: '0.5s', left: '25%', top: '20%', special: true },
+                { rot: '14deg', fd: '5.5s', delay: '2s', right: '8%', bottom: '10%' },
+                { rot: '-8deg', fd: '7.5s', delay: '0.8s', left: '0%', bottom: '12%' }
+            ];
+
+            floatConfigs.forEach((cfg, index) => {
+                const cardData = allCards[index % allCards.length];
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'floating-card';
+                cardDiv.style.cssText = `
+          --rot:${cfg.rot}; --fd:${cfg.fd}; --fdelay:${cfg.delay};
+          ${cfg.left ? `left:${cfg.left};` : ''}
+          ${cfg.right ? `right:${cfg.right};` : ''}
+          ${cfg.top ? `top:${cfg.top};` : ''}
+          ${cfg.bottom ? `bottom:${cfg.bottom};` : ''}
+          ${cfg.special ? 'width:160px; height:260px; z-index:2;' : ''}
+        `;
+
+                cardDiv.innerHTML = `
+          <img src="${cardData.imageUrl}" alt="${cardData.name}">
+          <span class="card-name">${cardData.name}</span>
+        `;
+                floatingContainer.appendChild(cardDiv);
+            });
+
+            // --- POPULATE CARD OF THE DAY ---
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+            const dailyCard = allCards[dayOfYear % allCards.length];
+
+            // Image inside flip card
+            const cotdImgContainer = document.getElementById('cotd-image-container');
+            cotdImgContainer.innerHTML = `<img src="${dailyCard.imageUrl}" alt="${dailyCard.name}">`;
+
+            // Text and Info
+            document.getElementById('cotd-name-title').textContent = dailyCard.name;
+            document.getElementById('cotd-desc-body').textContent = dailyCard.meaningUp;
+
+            // Keywords (Arcana + Suit + Element)
+            const kwContainer = document.getElementById('cotd-keywords-container');
+            const keywords = [dailyCard.arcana, dailyCard.suit, dailyCard.element];
+            kwContainer.innerHTML = keywords
+                .filter(k => k && k !== 'Немає')
+                .map(k => `<span class="kw-tag">${k}</span>`)
+                .join('');
+
+        } catch (error) {
+            console.error('Error fetching cards:', error);
+        }
+    }
+
+    // Start initialization
+    initializeArcana();
+</script>
+</body>
+</html>
