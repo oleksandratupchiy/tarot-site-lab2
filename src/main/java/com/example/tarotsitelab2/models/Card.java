@@ -21,6 +21,7 @@ public class Card {
     private String suit;   // Масть
     private String arcana; // Старший чи Молодший аркан
     private String element; // Стихія
+    private String imageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String meaningUp; // Пряме значення
